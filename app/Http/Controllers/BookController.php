@@ -20,7 +20,8 @@ class BookController extends Controller
        $books = Book::when($title,
        fn($query, $titel) => $query->title($title)
        )->get();
-
+    // So if title is not specified, the query is not limiting books by title, 
+    // otherwise it is limiting books by the title.
       return view('books.index', ['books' => $books]);
     }
 
