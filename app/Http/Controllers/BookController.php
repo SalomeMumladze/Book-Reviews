@@ -13,16 +13,28 @@ class BookController extends Controller
      */
     public function index(Request $request)
     {
-       $title = $request->input('title');
-    // if title is not null or not empty, it will run this function. Otherwise, it just won't.
-    // So if this first value passed to this first argument is not null, then this 
-    // function is called and this value is being passed.
-       $books = Book::when($title,
-       fn($query, $titel) => $query->title($title)
-       )->get();
-    // So if title is not specified, the query is not limiting books by title, 
-    // otherwise it is limiting books by the title.
-      return view('books.index', ['books' => $books]);
+        $title = $request->input('title');
+        $filter = $request->input('filter', '');
+
+        // if title is not null or not empty, it will run this function. Otherwise, it just won't.
+        // So if this first value passed to this first argument is not null, then this 
+        // function is called and this value is being passed.
+        $books = Book::when(
+            $title,
+            fn($query, $title) => $query->title($title)
+        );
+         // So if title is not specified, the query is not limiting books by title, 
+         // otherwise it is limiting books by the title.
+        $books = match ($filter) {
+            'popular_last_month' => $books->popularLastMonth(),
+            'popular_last_6months' => $books->popularLast6Months(),
+            'highest_rated_last_month' => $books->highestRatedLastMonth(),
+            'highest_rated_last_6months' => $books->highestRatedLast6Months(),
+            default => $books->latest()
+        };
+        $books = $books->get();
+
+        return view('books.index', ['books' => $books]);
     }
 
     /**

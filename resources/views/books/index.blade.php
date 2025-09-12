@@ -13,8 +13,8 @@
     @php
       $filters=[
         '' => 'latest',
-        'popular_last_month' => 'Populad last Month',
-        'popular_last_6month' => 'Populad last 6 Month',
+        'popular_last_month' => 'Popular last Month',
+        'popular_last_6month' => 'Popular last 6 Month',
         'highest_rated_last_month' => 'Highest rated last month',
         'highest_rated_last_6month' => 'Highest rated last 6 mmonth',
   ];
