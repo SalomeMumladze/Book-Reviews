@@ -2,7 +2,7 @@
 
 @section('content')
   <div class="mb-4">
-    <h1 class="mb-2 text-2xl">{{ $book->title }}</h1>
+    <h1 class="sticky top-0 mb-2 text-2xl">{{ $book->title }}</h1>
 
     <div class="book-info">
       <div class="book-author mb-4 text-lg font-semibold">by {{ $book->author }}</div>
