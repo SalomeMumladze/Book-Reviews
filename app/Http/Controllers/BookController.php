@@ -32,8 +32,17 @@ class BookController extends Controller
             'highest_rated_last_6months' => $books->highestRatedLast6Months(),
             default => $books->latest()
         };
-        $books = $books->get();
+        // $books = $books->get();
 
+        // So you need to tell the caching mechanism under which key you want to store some data.
+        // And also you need to tell the caching mechanism for how long you want this data stored because cache
+        // usually is is not stored indefinitely.
+        // 1 hour
+        $cacheKey = 'books:'.$filter.':'.$title;
+        $books = cache()->remember($cacheKey, 3600, fn()=>$books->get());
+        // how this remember would how this remember method would work is it will use the cache driver that
+        // ou configure whether a file or Redis server and it will see if it already contains this key.
+        // If it does not, it will run this function.
         return view('books.index', ['books' => $books]);
     }
 
