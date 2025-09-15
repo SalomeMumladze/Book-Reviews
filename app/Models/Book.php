@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Review;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class Book extends Model
 {
@@ -16,37 +15,49 @@ class Book extends Model
     {
         return $this->hasMany(Review::class);
     }
-
     // So notice that even though the scopes are prefixed with the scope word, so method 
     // is scope and the capital letter title, you use the lowercase letter and you skip the 
     // scope prefix when calling the query scopes.
-    public function scopeTitle(Builder $query, string $title): Builder|QueryBuilder
+    public function scopeTitle(Builder $query, string $title): Builder
     {
         return $query->where('title', 'LIKE', '%' . $title . '%');
     }
 
-    public function scopePopular(Builder $query, $from=null, $to=null): Builder {
-         return $query->withCount([
+    public function scopeWithReviewsCount(Builder $query, $from = null, $to = null): Builder|QueryBuilder
+    {
+        return $query->withCount([
             'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)
-        ])
-        ->orderBy('reviews_count', 'desc');
+        ]);
     }
 
-    public function scopeHighestRated(Builder $query, $from=null, $to=null): Builder|QueryBuilder {
+    public function scopeWithAvgRating(Builder $query, $from = null, $to = null): Builder|QueryBuilder
+    {
         return $query->withAvg([
             'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)
-            ], 
-            'rating')->orderBy('reviews_avg_rating', 'desc');
+        ], 'rating');
     }
 
-    public function scopeMinReviews(Builder $query, $minReviews):  Builder|QueryBuilder {
-        // you are working with the results of aggregate functions, you have to use this having clause.
+    public function scopePopular(Builder $query, $from = null, $to = null): Builder|QueryBuilder
+    {
+        return $query->withReviewsCount()
+            ->orderBy('reviews_count', 'desc');
+    }
+
+    public function scopeHighestRated(Builder $query, $from = null, $to = null): Builder|QueryBuilder
+    {
+        return $query->withAvgRating()
+            ->orderBy('reviews_avg_rating', 'desc');
+    }
+
+    public function scopeMinReviews(Builder $query, int $minReviews): Builder|QueryBuilder
+    {
+         // you are working with the results of aggregate functions, you have to use this having clause.
         // That's the simple reason why we are using having and not where.
         return $query->having('reviews_count', '>=', $minReviews);
     }
 
-
-    private function dateRangeFilter(Builder $query, $from = null, $to = null){
+    private function dateRangeFilter(Builder $query, $from = null, $to = null)
+    {
         if ($from && !$to) {
             $query->where('created_at', '>=', $from);
         } elseif (!$from && $to) {
@@ -85,5 +96,15 @@ class Book extends Model
         return $query->highestRated(now()->subMonths(6), now())
             ->popular(now()->subMonths(6), now())
             ->minReviews(5);
+    }
+
+    protected static function booted()
+    {
+        static::updated(
+            fn(Book $book) => cache()->forget('book:' . $book->id)
+        );
+        static::deleted(
+            fn(Book $book) => cache()->forget('book:' . $book->id)
+        );
     }
 }
